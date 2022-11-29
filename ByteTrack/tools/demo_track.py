@@ -200,7 +200,7 @@ def image_demo(predictor, vis_folder, current_time, args):
                     online_scores.append(t.score)
                     # save results
                     results.append(
-                        f"{frame_id},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n"
+                        f"{frame_id},{tid},{int(tlwh[0])},{int(tlwh[1])},{int(tlwh[2])},{int(tlwh[3])},-1,-1,-1,-1\n"
                     )
             timer.toc()
             online_im = plot_tracking(
