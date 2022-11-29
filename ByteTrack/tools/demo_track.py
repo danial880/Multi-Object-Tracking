@@ -4,9 +4,8 @@ import os.path as osp
 import time
 import cv2
 import torch
-
 from loguru import logger
-
+from tqdm import tqdm
 from yolox.data.data_augment import preproc
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
@@ -21,7 +20,7 @@ IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 def make_parser():
     parser = argparse.ArgumentParser("ByteTrack Demo!")
     parser.add_argument(
-        "demo", default="image", help="demo type, eg. image, video and webcam")
+        "--demo", default="image", help="demo type, eg. image, video and webcam")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
 
@@ -184,7 +183,7 @@ def image_demo(predictor, vis_folder, current_time, args):
     timer = Timer()
     results = []
 
-    for frame_id, img_path in enumerate(files, 1):
+    for frame_id, img_path in enumerate(tqdm(files), 1):
         outputs, img_info = predictor.inference(img_path, timer)
         if outputs[0] is not None:
             online_targets = tracker.update(outputs[0], [img_info['height'], img_info['width']], exp.test_size)
