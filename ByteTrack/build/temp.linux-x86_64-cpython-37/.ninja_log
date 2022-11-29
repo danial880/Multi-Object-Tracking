@@ -1,5 +1,0 @@
-# ninja log v5
-0	4755	1668234803770293105	/home/danial/Desktop/ByteTrack-main/build/temp.linux-x86_64-cpython-37/home/danial/Desktop/ByteTrack-main/yolox/layers/csrc/cocoeval/cocoeval.o	24ebdc50b10d4344
-0	5695	1668234804710294096	/home/danial/Desktop/ByteTrack-main/build/temp.linux-x86_64-cpython-37/home/danial/Desktop/ByteTrack-main/yolox/layers/csrc/vision.o	59bd1cd6a14a7164
-0	4809	1669703626402850594	/home/danial/Desktop/Multi-Object-Tracking/ByteTrack/build/temp.linux-x86_64-cpython-37/home/danial/Desktop/Multi-Object-Tracking/ByteTrack/yolox/layers/csrc/cocoeval/cocoeval.o	2210e8b67e69ffb1
-1	5752	1669703627346831389	/home/danial/Desktop/Multi-Object-Tracking/ByteTrack/build/temp.linux-x86_64-cpython-37/home/danial/Desktop/Multi-Object-Tracking/ByteTrack/yolox/layers/csrc/vision.o	3e4aa4920fea658
