@@ -140,3 +140,4 @@ events.out.tfevents*
 YOLOX_outputs
 train_part7
 pretrained
+models
