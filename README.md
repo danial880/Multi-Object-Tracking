@@ -4,6 +4,7 @@
 <summary>
 <big><b>Installation</b></big>
 </summary>
+
 - Install StrongSORT
 ```js
   cd StrongSORT
