@@ -1,6 +1,6 @@
 # Multi-Object tracking using all variants of deepsort
 <details>
-  <summary>Installation</summary> 
+  <summary>Installation</summary>
   ### Install StrongSORT
   ```js
   cd StrongSORT
