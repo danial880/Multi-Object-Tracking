@@ -22,8 +22,8 @@ If running first time, then first build bytetrack
 cd ByteTrack
 python tools/demo_track.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --fuse --save_result --path train_part7/07_University_Campus --conf 0.25 --nms 0.45 --tsize 5120
 ```
-### ByteTrack+SAHI
+### SAHI with ByteTrack
 ```
-cd ByteTrack+SAHI
+cd ByteTrack
 python tools/sahi_track.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --path train_part7/07_University_Campus --tsize 5120 --save_result
 ```
