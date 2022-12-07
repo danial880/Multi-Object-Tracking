@@ -2,10 +2,10 @@
 <details>
   <summary>Installation</summary> 
   * Install StrongSORT
-```
+  ```js
 cd StrongSORT
 pip install -r requirements.txt
-```
+  ```
   * Install ByteTrack
 ```
 cd ByteTrack
