@@ -18,7 +18,7 @@ git clone https://github.com/kadirnar/Yolov7-SAHI.git
 python3 setup.py install
 ```
 ## Download Models
-- Download [Yolov7-E6E](https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-e6e.pt) and put it under [weigths](https://github.com/danial880/Multi-Object-Tracking/tree/main/StrongSORT/weights) folder
+- Download [Yolov7-E6E](https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-e6e.pt) and put it under [StrongSORT/weigths](https://github.com/danial880/Multi-Object-Tracking/tree/main/StrongSORT/weights) and [ByteTrack/models](https://github.com/danial880/Multi-Object-Tracking/tree/main/ByteTrack/models) folders respectively
 - Download [bytetrack_x_mot20](https://drive.google.com/file/d/1HX2_JpMOjOIj1Z9rJjoet9XNy_cCAs5U/view?usp=sharing) and put it under [pretrained](https://github.com/danial880/Multi-Object-Tracking/tree/main/ByteTrack/pretrained) folder
 
 ## Inference
