@@ -1,2 +1,2 @@
-### Put pretrained models here
+### Put yolov7 models here
 
