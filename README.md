@@ -3,20 +3,20 @@
   <summary>Installation</summary> 
   * Install StrongSORT
   ```js
-cd StrongSORT
-pip install -r requirements.txt
+  cd StrongSORT
+  pip install -r requirements.txt
   ```
   * Install ByteTrack
-```
-cd ByteTrack
-pip install -r requirements.txt
-python3 setup.py develop
-```
+  ```
+  cd ByteTrack
+  pip install -r requirements.txt
+  python3 setup.py develop
+  ```
   * Install SAHI
-```
-git clone https://github.com/kadirnar/Yolov7-SAHI.git
-python3 setup.py install
-```
+  ```
+  git clone https://github.com/kadirnar/Yolov7-SAHI.git
+  python3 setup.py install
+  ```
 </details>
 ## Download Models
 - Download [Yolov7-E6E](https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-e6e.pt) and put it under [StrongSORT/weigths](https://github.com/danial880/Multi-Object-Tracking/tree/main/StrongSORT/weights) and [ByteTrack/models](https://github.com/danial880/Multi-Object-Tracking/tree/main/ByteTrack/models) folders respectively
