@@ -3,7 +3,7 @@
 
 <summary>
 <big><b>Installation</b></big>
-</summary>
+</summary> 
 
 - Install StrongSORT
 ```js
