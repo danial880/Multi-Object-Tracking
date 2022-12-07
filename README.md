@@ -1,18 +1,18 @@
 # Multi-Object tracking using all variants of deepsort
 <details>
   <summary>Installation</summary> 
-  * Install StrongSORT
+  - Install StrongSORT
   ```js
   cd StrongSORT
   pip install -r requirements.txt
   ```
-  * Install ByteTrack
+  - Install ByteTrack
   ```
   cd ByteTrack
   pip install -r requirements.txt
   python3 setup.py develop
   ```
-  * Install SAHI
+  - Install SAHI
   ```
   git clone https://github.com/kadirnar/Yolov7-SAHI.git
   python3 setup.py install
