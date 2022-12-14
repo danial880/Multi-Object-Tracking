@@ -44,8 +44,13 @@ python track_v7.py --yolo-weights weights/yolov7-e6e.pt --source train_part7/07_
 cd ByteTrack
 python tools/demo_track.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --fuse --save_result --path train_part7/07_University_Campus --conf 0.25 --nms 0.45 --tsize 5120
 ```
-### SAHI with ByteTrack
+### SAHI with ByteTrack (Yolov7)
 ```
 cd ByteTrack
-python tools/sahi_track.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --path train_part7/07_University_Campus --tsize 5120 --save_result
+python tools/sahi_track_v7.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --path train_part7/07_University_Campus --tsize 5120 --save_result
+```
+### SAHI with ByteTrack (YolovX)
+```
+cd ByteTrack
+python tools/sahi_track_vX.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --path train_part7/07_University_Campus --tsize 5120 --conf 0.10 --nms 0.1 --save_result
 ```
