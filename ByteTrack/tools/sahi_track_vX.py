@@ -285,12 +285,13 @@ def image_demo(predictor, vis_folder, current_time, args):
             online_im = img_info['raw_img']
 
         # result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
+        '''
         if args.save_result:
             timestamp = time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
             save_folder = osp.join(vis_folder, timestamp)
             os.makedirs(save_folder, exist_ok=True)
             cv2.imwrite(osp.join(save_folder, osp.basename(img_path)), online_im)
-
+        '''
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
 
