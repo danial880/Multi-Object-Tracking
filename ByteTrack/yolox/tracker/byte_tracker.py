@@ -156,13 +156,14 @@ class BYTETracker(object):
         self.max_time_lost = self.buffer_size
         self.kalman_filter = KalmanFilter()
 
-    def update(self, bboxes, scores):
+    def update(self, bboxes, scores):#output_results, img_info, img_size):
         self.frame_id += 1
         activated_starcks = []
         refind_stracks = []
         lost_stracks = []
         removed_stracks = []
         '''
+        print('output_results.shape: ',output_results.shape)
         if output_results.shape[1] == 5:
             scores = output_results[:, 4]
             bboxes = output_results[:, :4]

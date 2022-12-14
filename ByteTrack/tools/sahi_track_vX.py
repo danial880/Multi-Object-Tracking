@@ -7,13 +7,17 @@ import torch
 import numpy as np
 from loguru import logger
 from tqdm import tqdm
+from sahi.prediction import ObjectPrediction
+from sahi.postprocess.utils import ObjectPredictionList, has_match
+from sahi.postprocess.utils import merge_object_prediction_pair
+from sahi.slicing import slice_image
 from yolox.data.data_augment import preproc
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
 from yolox.utils.visualize import plot_tracking
 from yolox.tracker.byte_tracker import BYTETracker
 from yolox.tracking_utils.timer import Timer
-
+from sahi.postprocess.combine import batched_greedy_nmm
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
@@ -156,23 +160,90 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = img
 
-        img, ratio = preproc(img, self.test_size, self.rgb_means, self.std)
-        img_info["ratio"] = ratio
-        img = torch.from_numpy(img).unsqueeze(0).float().to(self.device)
-        if self.fp16:
-            img = img.half()  # to FP16
-
-        with torch.no_grad():
-            timer.tic()
-            outputs = self.model(img)
-            if self.decoder is not None:
-                outputs = self.decoder(outputs, dtype=outputs.type())
-            outputs = postprocess(
-                outputs, self.num_classes, self.confthre, self.nmsthre
-            )
-            #logger.info("Infer time: {:.4f}s".format(time.time() - t0))
-        return outputs, img_info
-
+        slice_image_result = slice_image(
+            image=img,
+            slice_height=exp.test_size[0],
+            slice_width=exp.test_size[0],
+            overlap_height_ratio=0.1,
+            overlap_width_ratio=0.1,
+            auto_slice_resolution=False,
+        )
+        slices = slice_image_result.images
+        object_prediction_list = []
+        previous = False
+        for count, slicee in enumerate(slices):
+            shift = slice_image_result.starting_pixels[count]
+            print("shift = ", shift)
+            
+            proc_slice, ratio = preproc(slicee, self.test_size, self.rgb_means,
+                                        self.std)
+            img_info["ratio"] = ratio
+            tensor_proc_slice = torch.from_numpy(proc_slice).unsqueeze(0).float().to(self.device)
+            with torch.no_grad():
+                outputs = self.model(tensor_proc_slice)
+                outputs = postprocess(outputs, self.num_classes, self.confthre,
+                                    self.nmsthre)
+            if outputs[0] is not None:
+                output_results = outputs[0]
+                output_results = output_results.cpu().numpy()
+                output_results[:, 4] = output_results[:, 4] * output_results[:, 5]
+                output_results = np.delete(output_results,5,axis=1)
+                output_results[:, 0] = output_results[:, 0] + shift[0]
+                output_results[:, 1] = output_results[:, 1] + shift[1]
+                output_results[:, 2] = output_results[:, 2] + shift[0]
+                output_results[:, 3] = output_results[:, 3] + shift[1]                                
+                new_tensor = torch.from_numpy(output_results)
+                for pred in output_results:
+                    x1, y1, x2, y2 = (int(pred[0]), int(pred[1]), int(pred[2]),
+                                    int(pred[3]),)
+                    bbox = [x1, y1, x2, y2]
+                    score = pred[4]
+                    category_id = pred[5]
+                    object_prediction = ObjectPrediction(
+                        bbox=bbox,
+                        category_id=int(category_id),
+                        score=score,
+                        bool_mask=None,
+                        category_name='person',
+                        shift_amount=[0, 0],
+                        full_shape=None,
+                    )
+                    object_prediction_list.append(object_prediction)
+                if not previous:
+                    current_tensor = new_tensor
+                    previous = True
+                else:
+                    big_tensor = torch.cat((current_tensor, new_tensor))
+                    current_tensor = big_tensor     
+        cuda_tensor = current_tensor.cuda()            
+        keep_to_merge_list = batched_greedy_nmm(
+            cuda_tensor,
+            match_metric = "IOS",
+            match_threshold = 0.5,
+        )
+        object_prediction_list = ObjectPredictionList(object_prediction_list)
+        selected_object_predictions = []
+        for keep_ind, merge_ind_list in keep_to_merge_list.items():
+            for merge_ind in merge_ind_list:
+                if has_match(
+                    object_prediction_list[keep_ind].tolist(),
+                    object_prediction_list[merge_ind].tolist(),
+                    "IOS",
+                    0.5,
+                ):
+                    object_prediction_list[keep_ind] = merge_object_prediction_pair(
+                        object_prediction_list[keep_ind].tolist(), object_prediction_list[merge_ind].tolist()
+                    )
+            selected_object_predictions.append(object_prediction_list[keep_ind].tolist())
+        bbox_list = []
+        score_list = []
+        for pred in selected_object_predictions:
+            if pred.category.id == 0:
+                bbox = pred.bbox.to_voc_bbox()
+                score = pred.score.value
+                bbox_list.append(bbox)
+                score_list.append(score)
+        return bbox_list, score_list, img_info
 
 def image_demo(predictor, vis_folder, current_time, args):
     if osp.isdir(args.path):
@@ -185,17 +256,11 @@ def image_demo(predictor, vis_folder, current_time, args):
     results = []
 
     for frame_id, img_path in enumerate(tqdm(files), 1):
-        outputs, img_info = predictor.inference(img_path, timer)
-        if outputs[0] is not None:
-            output_results = outputs[0]
-            print('\nelement 1 = ',output_results[0])
-            output_results = output_results.cpu().numpy()
-            output_results[:, 4] = output_results[:, 4] * output_results[:, 5]
-            output_results = np.delete(output_results,5,axis=1)
-            new_tensor = torch.from_numpy(output_results).cuda()
-            print('\nAfter element 1 = ',new_tensor[0])
-            break
-            online_targets = tracker.update(outputs[0], [img_info['height'], img_info['width']], exp.test_size)
+        bbox, score, img_info = predictor.inference(img_path, timer)
+        bbox_numpy = np.array(bbox)
+        score_numpy = np.array(score)
+        if bbox_numpy is not None:
+            online_targets = tracker.update(bbox_numpy, score_numpy)
             online_tlwhs = []
             online_ids = []
             online_scores = []
@@ -320,7 +385,7 @@ def main(exp, args):
         args.device = "gpu"
     args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
 
-    logger.info("Args: {}".format(args))
+    #logger.info("Args: {}".format(args))
 
     if args.conf is not None:
         exp.test_conf = args.conf
@@ -330,7 +395,7 @@ def main(exp, args):
         exp.test_size = (args.tsize, args.tsize)
 
     model = exp.get_model().to(args.device)
-    logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
+    #logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
     model.eval()
 
     if not args.trt:

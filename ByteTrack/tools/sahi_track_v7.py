@@ -130,7 +130,7 @@ def image_demo(vis_folder, current_time, args):
     yolov7_model_path = 'models/yolov7-e6e.pt'
     detection_model = Yolov7DetectionModel(
         model_path=yolov7_model_path,
-        confidence_threshold=0.25,
+        confidence_threshold=0.45,
         image_size=exp.test_size[0],
         device=args.device,
     )
@@ -157,6 +157,8 @@ def image_demo(vis_folder, current_time, args):
                 score = pred.score.value
                 bbox_list.append(bbox)
                 score_list.append(score)
+        print(len(bbox_list))
+        print(len(score_list))
         bbox_numpy = np.array(bbox_list)
         scores_numpy = np.array(score_list)
 
