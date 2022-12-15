@@ -39,6 +39,12 @@ def make_parser():
         action="store_true",
         help="whether to save the inference result of image/video",
     )
+    
+    parser.add_argument(
+        "--save_txt",
+        action="store_true",
+        help="whether to save the inference result of image/video",
+    )
 
     # exp file
     parser.add_argument(
@@ -159,7 +165,40 @@ class Predictor(object):
         img_info["height"] = height
         img_info["width"] = width
         img_info["raw_img"] = img
-
+        #inference on full image
+        object_prediction_list = []
+        proc_slice_full, ratio_full = preproc(img, self.test_size, self.rgb_means, self.std)
+        tensor_proc_slice_full = torch.from_numpy(proc_slice_full).unsqueeze(0).float().to(self.device)
+        with torch.no_grad():
+            outputs_full = self.model(tensor_proc_slice_full)
+            outputs_full = postprocess(outputs_full, self.num_classes, self.confthre,
+                                self.nmsthre)
+        output_results = outputs_full[0]
+        output_results = output_results.cpu().numpy()
+        output_results[:, 4] = output_results[:, 4] * output_results[:, 5]
+        output_results = np.delete(output_results,5,axis=1)
+        output_results[:, 0] = output_results[:, 0] * int(width//self.test_size[0]) * width
+        output_results[:, 1] = output_results[:, 1] * int(height//self.test_size[0]) * height
+        output_results[:, 2] = output_results[:, 2] * int(width//self.test_size[0]) * width
+        output_results[:, 3] = output_results[:, 3] * int(height//self.test_size[0]) * height                              
+        full_tensor = torch.from_numpy(output_results)
+        for pred in output_results:
+            x1, y1, x2, y2 = (int(pred[0]), int(pred[1]), int(pred[2]),
+                            int(pred[3]),)
+            bbox = [x1, y1, x2, y2]
+            score = pred[4]
+            #print('score = ',score)
+            category_id = pred[5]
+            object_prediction = ObjectPrediction(
+                bbox=bbox,
+                category_id=int(category_id),
+                score=score,
+                bool_mask=None,
+                category_name='person',
+                shift_amount=[0, 0],
+                full_shape=None,
+            )
+            object_prediction_list.append(object_prediction)
         slice_image_result = slice_image(
             image=img,
             slice_height=exp.test_size[0],
@@ -169,11 +208,11 @@ class Predictor(object):
             auto_slice_resolution=False,
         )
         slices = slice_image_result.images
-        object_prediction_list = []
+        
         previous = False
         for count, slicee in enumerate(slices):
             shift = slice_image_result.starting_pixels[count]
-            print("shift = ", shift)
+            #print("shift = ", shift)
             
             proc_slice, ratio = preproc(slicee, self.test_size, self.rgb_means,
                                         self.std)
@@ -198,6 +237,7 @@ class Predictor(object):
                                     int(pred[3]),)
                     bbox = [x1, y1, x2, y2]
                     score = pred[4]
+                    #print('score = ',score)
                     category_id = pred[5]
                     object_prediction = ObjectPrediction(
                         bbox=bbox,
@@ -210,12 +250,13 @@ class Predictor(object):
                     )
                     object_prediction_list.append(object_prediction)
                 if not previous:
-                    current_tensor = new_tensor
+                    current_tensor = torch.cat((full_tensor, new_tensor))
                     previous = True
                 else:
                     big_tensor = torch.cat((current_tensor, new_tensor))
                     current_tensor = big_tensor     
         cuda_tensor = current_tensor.cuda()            
+        print('Before SAHI post-processing',cuda_tensor.size())
         keep_to_merge_list = batched_greedy_nmm(
             cuda_tensor,
             match_metric = "IOS",
@@ -243,6 +284,8 @@ class Predictor(object):
                 score = pred.score.value
                 bbox_list.append(bbox)
                 score_list.append(score)
+        print('after sahi post_processing',len(bbox_list))
+        
         return bbox_list, score_list, img_info
 
 def image_demo(predictor, vis_folder, current_time, args):
@@ -277,21 +320,20 @@ def image_demo(predictor, vis_folder, current_time, args):
                         f"{frame_id},{tid},{int(tlwh[0])},{int(tlwh[1])},{int(tlwh[2])},{int(tlwh[3])},-1,-1,-1,-1\n"
                     )
             timer.toc()
-            online_im = plot_tracking(
-                img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id, fps=1. / timer.average_time
-            )
+            #online_im = plot_tracking(
+            #    img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id, fps=1. / timer.average_time
+            #)
         else:
             timer.toc()
             online_im = img_info['raw_img']
 
         # result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
-        '''
         if args.save_result:
             timestamp = time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
             save_folder = osp.join(vis_folder, timestamp)
             os.makedirs(save_folder, exist_ok=True)
             cv2.imwrite(osp.join(save_folder, osp.basename(img_path)), online_im)
-        '''
+
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
 
@@ -299,7 +341,8 @@ def image_demo(predictor, vis_folder, current_time, args):
         if ch == 27 or ch == ord("q") or ch == ord("Q"):
             break
 
-    if args.save_result:
+    if args.save_txt:
+        timestamp = time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
         res_file = osp.join(vis_folder, f"{timestamp}.txt")
         with open(res_file, 'w') as f:
             f.writelines(results)
