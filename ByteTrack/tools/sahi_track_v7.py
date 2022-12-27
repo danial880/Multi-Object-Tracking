@@ -85,7 +85,7 @@ def make_parser():
         help="Using TensorRT model for testing.",
     )
     # tracking args
-    parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
+    parser.add_argument("--track_thresh", type=float, default=0.45, help="tracking confidence threshold")
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
     parser.add_argument("--match_thresh", type=float, default=0.8, help="matching threshold for tracking")
     parser.add_argument(
@@ -127,10 +127,10 @@ def image_demo(vis_folder, current_time, args):
     tracker = BYTETracker(args, frame_rate=args.fps)
     timer = Timer()
     results = []
-    yolov7_model_path = 'models/yolov7-e6e.pt'
+    yolov7_model_path = 'models/best.pt'
     detection_model = Yolov7DetectionModel(
         model_path=yolov7_model_path,
-        confidence_threshold=0.45,
+        confidence_threshold=0.25,
         image_size=exp.test_size[0],
         device=args.device,
     )
@@ -139,13 +139,16 @@ def image_demo(vis_folder, current_time, args):
     for frame_id, img_path in enumerate(tqdm(files), 1):
         print('image_path:',img_path)
         img_info = {"id": 0}
+        img = cv2.imread(img_path)
+        img_info["raw_img"] = img
         result = get_sliced_prediction(
             img_path,
             detection_model,
             slice_height = exp.test_size[0],
             slice_width = exp.test_size[0],
-            overlap_height_ratio = 0.1,
-            overlap_width_ratio = 0.1,
+            overlap_height_ratio = 0.8,
+            overlap_width_ratio = 0.3,
+            postprocess_match_threshold = 0.8,
             auto_slice_resolution = False,
         )
         object_prediction_list = result.object_prediction_list
@@ -180,9 +183,18 @@ def image_demo(vis_folder, current_time, args):
                         f"{frame_id},{tid},{int(tlwh[0])},{int(tlwh[1])},{int(tlwh[2])},{int(tlwh[3])},-1,-1,-1,-1\n"
                     )
             timer.toc()
+            if args.save_result:
+                online_im = plot_tracking(
+                    img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id, fps=1. / timer.average_time
+                )
         else:
             timer.toc()
 
+        if args.save_result:
+            timestamp = time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
+            save_folder = osp.join(vis_folder, timestamp)
+            os.makedirs(save_folder, exist_ok=True)
+            cv2.imwrite(osp.join(save_folder, osp.basename(img_path)), online_im)
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
 
