@@ -50,7 +50,7 @@ cd ByteTrack
 python tools/sahi_track_v7.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --path train_part7/07_University_Campus --tsize 5120 --save_result
 ```
 ### SAHI with ByteTrack (YolovX)
-Edit line 167-168 of [tools/sahi_track_vX.py](https://github.com/danial880/Multi-Object-Tracking/blob/main/ByteTrack/tools/sahi_track_vX.py) for changing sahi overlap threshold
+Edit line 117-118 of [tools/sahi_track_vX.py](https://github.com/danial880/Multi-Object-Tracking/blob/main/ByteTrack/tools/sahi_track_vX.py) for changing sahi overlap threshold
 ```
 cd ByteTrack
 python tools/sahi_track_vX.py -f exps/example/mot/yolox_x_mix_mot20_ch.py -c pretrained/bytetrack_x_mot20.tar --path train_part7/07_University_Campus --tsize 5120 --conf 0.10 --nms 0.1 --save_result
