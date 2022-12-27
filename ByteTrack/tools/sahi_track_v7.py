@@ -166,7 +166,7 @@ def image_demo(vis_folder, current_time, args):
         scores_numpy = np.array(score_list)
 
         if bbox_numpy is not None:
-            online_targets = tracker.update(bbox_numpy, scores_numpy)
+            online_targets = tracker.update_sahi(bbox_numpy, scores_numpy)
             online_tlwhs = []
             online_ids = []
             online_scores = []
